@@ -1,14 +1,37 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>My first three.js app</title>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Web Flight Simulator</title>
+
     <style>
-      body { margin: 0; }
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+        }
+
+        #c {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
     </style>
-  </head>
-  <body>
-    <script type="module" src="/main.js"></script>
-  </body>
+</head>
+
+<body>
+
+    <script type="importmap">
+            {
+                "imports": {
+                    "three": "./js/lib/three.module.js"
+                 }
+            }    
+ </script>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+</body>
+
 </html>
-    
