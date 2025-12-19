@@ -29,7 +29,7 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 directionalLight.position.set(5, 10, 5);
 scene.add(directionalLight);
 
-camera.position.z = 100;
+camera.position.z = 500;
 controls.update();
 
 // * Animation Loop
