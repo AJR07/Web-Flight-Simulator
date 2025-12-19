@@ -1,6 +1,5 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import TerrainData from "./maps/map";
 
 // * Basic Scene Properties
@@ -12,11 +11,12 @@ const camera = new THREE.PerspectiveCamera(
   1000
 );
 const renderer = new THREE.WebGLRenderer();
+const controls = new OrbitControls(camera, renderer.domElement);
+
+// terrain setup
 const terrain = new TerrainData();
 await terrain.setup();
 scene.add(terrain.ground);
-const controls = new OrbitControls(camera, renderer.domElement);
-const loader = new GLTFLoader();
 
 // * Basic Setup
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -29,14 +29,15 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
 directionalLight.position.set(5, 10, 5);
 scene.add(directionalLight);
 
-camera.position.z = 5;
-
+camera.position.z = 100;
+controls.update();
 
 // * Animation Loop
 function render() {
   const canvas = renderer.domElement;
   camera.aspect = canvas.clientWidth / canvas.clientHeight;
   camera.updateProjectionMatrix();
+  controls.update();
   renderer.render(scene, camera);
 }
 
