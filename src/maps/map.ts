@@ -1,12 +1,11 @@
 import "leaflet/dist/leaflet.css";
 import { Mesh, MeshStandardMaterial, PlaneGeometry } from "three";
 
-const ELEVATION_SCALE = 1000;
-const BOUNDS = { north: 35.397, south: 35.33, east: 138.78, west: 138.69 };
-const RESOLUTION = 0.01; // lat degrees between points
+const ELEVATION_SCALE = 0.01;
+const BOUNDS = { north: 35.39, south: 35.33, east: 138.78, west: 138.69 };
+const RESOLUTION = 0.001; // should be smaller in power than BOUNDS
 const SIZE_X = Math.ceil((BOUNDS.east - BOUNDS.west) / RESOLUTION);
 const SIZE_Y = Math.ceil((BOUNDS.north - BOUNDS.south) / RESOLUTION);
-console.log(`Terrain size: ${SIZE_X} x ${SIZE_Y}`);
 
 export default class TerrainData {
   ground: Mesh = new Mesh();
@@ -16,10 +15,23 @@ export default class TerrainData {
   async setup() {
     // Get terrain data
     const terrainData = await this.getTerrainData(BOUNDS, RESOLUTION);
-    console.log("Terrain data points:", terrainData);
+
+    // find highest point
+    let maxElevation = -Infinity;
+    for (const point of terrainData) {
+      if (point.elevation > maxElevation) {
+        maxElevation = point.elevation;
+      }
+    }
+    console.log(`Max elevation: ${maxElevation} meters`);
 
     // Create geometry with segments matching our data points
-    const groundGeometry = new PlaneGeometry(SIZE_X, SIZE_Y, SIZE_X, SIZE_Y);
+    const groundGeometry = new PlaneGeometry(
+      SIZE_X - 1,
+      SIZE_Y - 1,
+      SIZE_X - 1,
+      SIZE_Y - 1
+    );
 
     // Apply elevation data to geometry vertices
     this.applyElevationToGeometry(groundGeometry, terrainData, BOUNDS);
@@ -45,18 +57,17 @@ export default class TerrainData {
     bounds: { north: number; south: number; east: number; west: number }
   ): void {
     const vertices = geometry.attributes.position;
-    console.log(vertices.count, terrainData.length)
+    console.log(vertices.count, terrainData.length);
     for (let i = 0; i < vertices.count; i++) {
-      const x = vertices.getX(i) + SIZE_X / 2;
-      const y = vertices.getY(i) + SIZE_Y / 2;
-      if (x == SIZE_X || y == SIZE_Y) {
-        continue; // Skip last row/column to avoid out-of-bounds
-      }
-  
+      const x = vertices.getX(i) + (SIZE_X - 1) / 2;
+      const y = vertices.getY(i) + (SIZE_Y - 1) / 2;
+
       // Set vertex Z position to elevation
       let index = y * SIZE_X + x;
-      console.log(`Vertex ${i}: x=${x}, y=${y}, index=${index}, elevation=${terrainData[index]?.elevation}`);
-      vertices.setZ(i, terrainData[index]?.elevation / ELEVATION_SCALE);
+      // console.log(
+      //   `Vertex ${i}: x=${x}, y=${y}, index=${index}, elevation=${terrainData[index]?.elevation}`
+      // );
+      vertices.setZ(i, terrainData[index]?.elevation * ELEVATION_SCALE);
     }
     vertices.needsUpdate = true;
   }
@@ -67,11 +78,21 @@ export default class TerrainData {
   ): Promise<{ lat: number; lng: number; elevation: number }[]> {
     const locations: { latitude: number; longitude: number }[] = [];
 
-    for (let lat = bounds.south; lat <= bounds.north; lat += resolution) {
-      for (let lng = bounds.west; lng <= bounds.east; lng += resolution) {
-        locations.push({ latitude: lat, longitude: lng });
+    // Using 1e5 to avoid floating point precision issues
+    for (
+      let lat = bounds.south * 1e5;
+      lat <= bounds.north * 1e5;
+      lat += resolution * 1e5
+    ) {
+      for (
+        let lng = bounds.west * 1000;
+        lng <= bounds.east * 1e5;
+        lng += resolution * 1e5
+      ) {
+        locations.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
       }
     }
+    console.log(`Locations: ${locations.length}`);
 
     try {
       const response = await fetch(
